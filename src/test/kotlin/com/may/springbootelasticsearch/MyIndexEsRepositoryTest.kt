@@ -10,7 +10,7 @@ internal class MyIndexEsRepositoryTest @Autowired constructor(
 ) {
     @Test
     fun `메세지에 dog가 포함된 도큐먼트를 가져온다`() {
-        val response = repository.getMessageByTerm("dog")
+        val response = repository.getMessagesByTerm("dog")
         /*
             {"took":78,"timed_out":false,
             "_shards":{"total":2,"successful":2,"skipped":0,"failed":0},
@@ -30,5 +30,21 @@ internal class MyIndexEsRepositoryTest @Autowired constructor(
             Brown fox brown dog
             Lazy jumping dog
          */
+    }
+
+    @Test
+    fun `station 별 버킷을 가져온다`() {
+        val response = repository.getBucketsByField("stations", "station.keyword")
+        for (bucketDto in response) {
+            println("${bucketDto.key}: ${bucketDto.count}")
+        }
+    }
+
+    @Test
+    fun `line 별 버킷을 가져온다`() {
+        val response = repository.getBucketsByField("lines", "line.keyword")
+        for (bucketDto in response) {
+            println("${bucketDto.key}: ${bucketDto.count}")
+        }
     }
 }
