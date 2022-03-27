@@ -3,6 +3,7 @@ package com.may.springbootelasticsearch
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import java.time.LocalDateTime
 
 @SpringBootTest
 internal class MyIndexEsRepositoryTest @Autowired constructor(
@@ -38,6 +39,15 @@ internal class MyIndexEsRepositoryTest @Autowired constructor(
         for (bucketDto in response) {
             println("${bucketDto.key}: ${bucketDto.count}")
         }
+        /*
+            신도림: 3
+            강남: 2
+            불광: 1
+            신촌: 1
+            양재: 1
+            종각: 1
+            홍제: 1
+         */
     }
 
     @Test
@@ -46,5 +56,47 @@ internal class MyIndexEsRepositoryTest @Autowired constructor(
         for (bucketDto in response) {
             println("${bucketDto.key}: ${bucketDto.count}")
         }
+    }
+
+    @Test
+    fun `메세지 로그를 저장한다`() {
+        repository.saveMessage(
+            MessageLog(
+                message = "test message",
+                createdAt = LocalDateTime.now()
+            )
+        )
+        /*
+            curl -XGET 'localhost:9200/message-log-2022-03-27/_search?pretty'
+            {
+              "took" : 24,
+              "timed_out" : false,
+              "_shards" : {
+                "total" : 1,
+                "successful" : 1,
+                "skipped" : 0,
+                "failed" : 0
+              },
+              "hits" : {
+                "total" : {
+                  "value" : 1,
+                  "relation" : "eq"
+                },
+                "max_score" : 1.0,
+                "hits" : [
+                  {
+                    "_index" : "message-log-2022-03-27",
+                    "_type" : "_doc",
+                    "_id" : "8aIcy38BtTirsXuYK13T",
+                    "_score" : 1.0,
+                    "_source" : {
+                      "message" : "test message",
+                      "createdAt" : "2022-03-27T20:21:35.135"
+                    }
+                  }
+                ]
+              }
+            }
+         */
     }
 }
