@@ -4,6 +4,7 @@ import org.elasticsearch.action.search.SearchRequest
 import org.elasticsearch.action.search.SearchResponse
 import org.elasticsearch.client.RequestOptions
 import org.elasticsearch.client.RestHighLevelClient
+import org.elasticsearch.index.query.BoolQueryBuilder
 import org.elasticsearch.index.query.QueryBuilders
 import org.elasticsearch.search.aggregations.AggregationBuilders
 import org.elasticsearch.search.aggregations.bucket.terms.Terms
@@ -14,34 +15,49 @@ import org.springframework.stereotype.Repository
 class MessageLogQueryRepository(
     private val elasticsearchClient: RestHighLevelClient,
 ) {
-    fun getMessagesByTerm(term: String): SearchResponse {
+    fun getMessageLogs(searchRequest: MessageLogSearchRequest): SearchResponse {
         val searchSourceBuilder = SearchSourceBuilder()
-        val filter = QueryBuilders.boolQuery()
-            .filter(
-                QueryBuilders.termQuery(
-                    "message",
-                    term
-                )
-            )
-        searchSourceBuilder.query(filter)
+        searchSourceBuilder.query(makeQuery(searchRequest))
 
-        val searchRequest = SearchRequest().indices("my_index").source(searchSourceBuilder)
-
+        val searchRequest =
+            SearchRequest().indices("${MessageLogConstant.INDEX_PATTERN}${searchRequest.date}").source(searchSourceBuilder)
         return elasticsearchClient.search(searchRequest, RequestOptions.DEFAULT)
     }
 
-    fun getBucketsByField(aggregationName: String,  fieldName: String): List<BucketDto> {
-        val termAggregation = AggregationBuilders.terms(aggregationName).field(fieldName) // default size: 10
-        val searchSourceBuilder = SearchSourceBuilder().aggregation(termAggregation)
+    fun getMessageLogsByUserId(searchRequest: MessageLogSearchRequest): List<BucketDto> {
+        val termAggregation = AggregationBuilders.terms(AGGREGATION_NAME).field("userId.id") // default size: 10
+        val searchSourceBuilder = SearchSourceBuilder()
+            .aggregation(termAggregation)
+            .query(makeQuery(searchRequest))
 
-        val searchRequest = SearchRequest().indices("my_stations").source(searchSourceBuilder)
+        val searchRequest =
+            SearchRequest().indices("${MessageLogConstant.INDEX_PATTERN}${searchRequest.date}").source(searchSourceBuilder)
         val searchResponse = elasticsearchClient.search(searchRequest, RequestOptions.DEFAULT)
-        val terms = searchResponse.aggregations.get<Terms>(aggregationName)
+        val terms = searchResponse.aggregations.get<Terms>(AGGREGATION_NAME)
         return terms.buckets.map {
             BucketDto(it.keyAsString, it.docCount)
         }
     }
 
+    private fun makeQuery(filter: MessageLogSearchRequest): BoolQueryBuilder? {
+        val queryBuilder = QueryBuilders.boolQuery()
+        filter.message?.let {
+            queryBuilder.filter(QueryBuilders.termQuery("message", it))
+        }
+        filter.status?.let {
+            queryBuilder.filter(QueryBuilders.matchQuery("status", it))
+            // TODO termQuery는 쿼리가 안됨
+        }
+        filter.userId?.let {
+            queryBuilder.filter(QueryBuilders.termQuery("userId.id", it))
+        }
+        return queryBuilder
+    }
+
+
+    companion object {
+        const val AGGREGATION_NAME = "message_log"
+    }
 }
 
 class BucketDto(
