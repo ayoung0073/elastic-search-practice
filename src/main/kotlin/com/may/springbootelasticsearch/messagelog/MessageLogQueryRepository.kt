@@ -1,31 +1,19 @@
-package com.may.springbootelasticsearch
+package com.may.springbootelasticsearch.messagelog
 
-import com.fasterxml.jackson.core.type.TypeReference
-import com.fasterxml.jackson.databind.ObjectMapper
 import org.elasticsearch.action.search.SearchRequest
 import org.elasticsearch.action.search.SearchResponse
 import org.elasticsearch.client.RequestOptions
-import org.elasticsearch.client.Requests
 import org.elasticsearch.client.RestHighLevelClient
 import org.elasticsearch.index.query.QueryBuilders
 import org.elasticsearch.search.aggregations.AggregationBuilders
 import org.elasticsearch.search.aggregations.bucket.terms.Terms
 import org.elasticsearch.search.builder.SearchSourceBuilder
 import org.springframework.stereotype.Repository
-import java.time.format.DateTimeFormatter
 
 @Repository
-class MyIndexEsRepository(
+class MessageLogQueryRepository(
     private val elasticsearchClient: RestHighLevelClient,
-    private val objectMapper: ObjectMapper
 ) {
-    fun saveMessage(message: MessageLog) {
-        val indexRequest = Requests
-            .indexRequest(makeIndex(message))
-            .source(convertLog(message))
-        elasticsearchClient.index(indexRequest, RequestOptions.DEFAULT)
-    }
-
     fun getMessagesByTerm(term: String): SearchResponse {
         val searchSourceBuilder = SearchSourceBuilder()
         val filter = QueryBuilders.boolQuery()
@@ -54,18 +42,6 @@ class MyIndexEsRepository(
         }
     }
 
-    private fun convertLog(log: MessageLog): Map<String, Any> {
-        val value = objectMapper.writeValueAsString(log)
-        return objectMapper.readValue(value, object : TypeReference<Map<String, Any>>() {})
-    }
-    private fun makeIndex(log: MessageLog): String {
-        return "$INDEX_PATTERN${log.createdAt.format(INDEX_FORMATTER)}"
-    }
-
-    companion object {
-        const val INDEX_PATTERN = "message-log-"
-        val INDEX_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-    }
 }
 
 class BucketDto(

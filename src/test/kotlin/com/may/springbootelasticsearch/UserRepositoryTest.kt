@@ -1,20 +1,21 @@
 package com.may.springbootelasticsearch
 
+import com.may.springbootelasticsearch.user.User
+import com.may.springbootelasticsearch.user.UserRepository
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 
 @SpringBootTest
-class UserEsRepositoryTest @Autowired constructor(
-    val userEsRepository: UserEsRepository
+class UserRepositoryTest @Autowired constructor(
+    val userRepository: UserRepository
 ) {
     @Test
     fun saveTest() {
         val user = User(
-            id = 3L,
-            name = "문아영",
-            age = 22
+            name = "문다영",
+            age = 25
         )
-        userEsRepository.save(user)
+        userRepository.save(user)
     }
 }

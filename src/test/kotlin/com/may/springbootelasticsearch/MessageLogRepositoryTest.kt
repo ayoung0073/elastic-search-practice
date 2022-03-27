@@ -1,17 +1,19 @@
 package com.may.springbootelasticsearch
 
+import com.may.springbootelasticsearch.messagelog.*
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import java.time.LocalDateTime
 
 @SpringBootTest
-internal class MyIndexEsRepositoryTest @Autowired constructor(
-    private val repository: MyIndexEsRepository
+internal class MessageLogRepositoryTest @Autowired constructor(
+    private val messageLogQeuryRepository: MessageLogQueryRepository,
+    private val messageLogCommandRepository: MessageLogCommandRepository
 ) {
     @Test
     fun `메세지에 dog가 포함된 도큐먼트를 가져온다`() {
-        val response = repository.getMessagesByTerm("dog")
+        val response = messageLogQeuryRepository.getMessagesByTerm("dog")
         /*
             {"took":78,"timed_out":false,
             "_shards":{"total":2,"successful":2,"skipped":0,"failed":0},
@@ -35,7 +37,7 @@ internal class MyIndexEsRepositoryTest @Autowired constructor(
 
     @Test
     fun `station 별 버킷을 가져온다`() {
-        val response = repository.getBucketsByField("stations", "station.keyword")
+        val response = messageLogQeuryRepository.getBucketsByField("stations", "station.keyword")
         for (bucketDto in response) {
             println("${bucketDto.key}: ${bucketDto.count}")
         }
@@ -52,7 +54,7 @@ internal class MyIndexEsRepositoryTest @Autowired constructor(
 
     @Test
     fun `line 별 버킷을 가져온다`() {
-        val response = repository.getBucketsByField("lines", "line.keyword")
+        val response = messageLogQeuryRepository.getBucketsByField("lines", "line.keyword")
         for (bucketDto in response) {
             println("${bucketDto.key}: ${bucketDto.count}")
         }
@@ -60,10 +62,12 @@ internal class MyIndexEsRepositoryTest @Autowired constructor(
 
     @Test
     fun `메세지 로그를 저장한다`() {
-        repository.saveMessage(
+        messageLogCommandRepository.saveMessageLog(
             MessageLog(
-                message = "test message",
-                createdAt = LocalDateTime.now()
+                message = "test message created",
+                createdAt = LocalDateTime.now(),
+                status = MessageStatus.CREATED,
+                userId = UserId(1L)
             )
         )
         /*
